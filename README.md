@@ -3,3 +3,4 @@ A repo containing code and related material to my work studying precessing AGNs.
 
 ## Files 
 - analysis.ipynb: A jupyter notebook used to calculate values and generate figures for the paper. Developed in collaboration with Ross Turner
+- Animations: Directory containing various animations of the jets as they evolve in time  
