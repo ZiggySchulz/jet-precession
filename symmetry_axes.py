@@ -22,6 +22,22 @@ def _rotate_image(image: np.ndarray, angle: float) -> np.ndarray:
     )
 
 
+def _symmetry_index_squared(image: np.ndarray, detectable: np.ndarray, power: int) -> float:
+    """Compute squared symmetry index of order 'power' for the image.
+    Parameters as below
+    """
+    columns = image.shape[1]
+    weighted_image = image**power
+    left = np.sum(
+        weighted_image[:, : columns // 2] * detectable[:, : columns // 2], axis=1
+    )
+    right = np.sum(
+        weighted_image[:, (columns + 1) // 2 :] * detectable[:, (columns + 1) // 2 :],
+        axis=1,
+    )
+    total = left + right
+    return float(np.sum((left - right) ** 2 * total) / np.sum(total))
+
 def symmetry_index(image: np.ndarray, detectable: np.ndarray, power: int) -> float:
     """Compute symmetry index of order 'power' for the image.
 
@@ -39,18 +55,7 @@ def symmetry_index(image: np.ndarray, detectable: np.ndarray, power: int) -> flo
     float
         Symmetry index value.
     """
-    columns = image.shape[1]
-    weighted_image = image**power
-    left = np.sum(
-        weighted_image[:, : columns // 2] * detectable[:, : columns // 2], axis=1
-    )
-    right = np.sum(
-        weighted_image[:, (columns + 1) // 2 :] * detectable[:, (columns + 1) // 2 :],
-        axis=1,
-    )
-    total = left + right
-    return float(np.sum((left - right) ** 2 * total) / np.sum(total))
-
+    return np.sqrt(_symmetry_index_squared(image, detectable, power=power))
 
 def calculate_symmetry_axes(
     angles: Sequence[float],
