@@ -70,11 +70,11 @@ def calculate_symmetry_axes(
     ----------
     angles : array-like
         Candidate axis angles in degrees. Use this to specify the range and resolution of angles to test for symmetry.
-    surface_brightness : ndarray or sequence of two ndarrays
-        Image data array, or a pair of images used for spectral-axis computation.
-    sensitivity : float or sequence of two floats
+    surface_brightness : ndarray
+        Image data array
+    sensitivity : float
         Detection threshold for one or two images.
-    gauss_kernel : astropy.convolution.Gaussian2DKernel or sequence of two kernels
+    gauss_kernel : astropy.convolution.Gaussian2DKernel
         Beam kernel(s) used for noise convolution.
     nsamples : int
         Number of Monte Carlo noise realizations.
@@ -101,54 +101,7 @@ def calculate_symmetry_axes(
             detectable[image_mc >= sensitivity] = 1
 
             for k, power in enumerate(powers):
-                results[k, i, j] = symmetry_index(image_mc, detectable, power=power)
-
-    idx = np.argmin(results, axis=2)
-    angles_best = [np.mean(angles[idx_k]) for idx_k in idx]
-    deviations = [np.std(angles[idx_k]) for idx_k in idx]
-
-    return (
-        (angles_best[0], deviations[0]),
-        (angles_best[1], deviations[1]),
-        (angles_best[2], deviations[2]),
-    )
-
-def calculate_spectral_index_symmetry_axes(
-    angles: Sequence[float],
-    image1: np.ndarray,
-    image2: np.ndarray,
-    sensitivity1: float,
-    sensitivity2: float,
-    kernel1: Gaussian2DKernel,
-    kernel2: Gaussian2DKernel,
-    nsamples: int,
-) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float]]:
-    """Compute symmetry axes for spectral index maps using a Monte Carlo simulation for n=0,1,2."""
-    
-    angles = np.asarray(angles)
-    image_shape = image1.shape
-    rot_img1 = np.stack([_rotate_image(image1, a) for a in angles])
-    rot_img2 = np.stack([_rotate_image(image2, a) for a in angles])
-
-    results = np.zeros((3, nsamples, len(angles)))
-    powers = (0, 1, 2)
-
-    for i in range(nsamples):
-        nse_img1 = _noise_map(image_shape, sensitivity1, kernel1)
-        nse_img2 = _noise_map(image_shape, sensitivity2, kernel2)
-        
-        for j in range(len(angles)):
-            image1_mc = rot_img1[j] + nse_img1
-            image2_mc = rot_img2[j] + nse_img2
-            spectral_index = np.nan_to_num(
-                1.0 / (-np.log(image2_mc / image1_mc) / np.log(6000.0 / 1400.0))
-            )
-            image_mc = np.clip(spectral_index, 0.0, 1.0 / 0.5)
-            detectable = np.zeros_like(image_mc, dtype=int)
-            detectable[np.logical_and(image1_mc >= sensitivity1, image2_mc >= sensitivity2)] = 1
-
-            for k, power in enumerate(powers):
-                results[k, i, j] = symmetry_index(image_mc, detectable, power=power)
+                results[k, i, j] = _symmetry_index_squared(image_mc, detectable, power=power)
 
     idx = np.argmin(results, axis=2)
     angles_best = [np.mean(angles[idx_k]) for idx_k in idx]
@@ -164,5 +117,4 @@ def calculate_spectral_index_symmetry_axes(
 __all__ = [
     "calculate_symmetry_axes",
     "symmetry_index",
-    "calculate_spectral_index_symmetry_axes",
 ]
