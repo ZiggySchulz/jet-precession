@@ -112,9 +112,3 @@ def calculate_symmetry_axes(
         (angles_best[1], deviations[1]),
         (angles_best[2], deviations[2]),
     )
-
-
-__all__ = [
-    "calculate_symmetry_axes",
-    "symmetry_index",
-]
