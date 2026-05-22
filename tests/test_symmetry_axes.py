@@ -1,3 +1,4 @@
+"""Unit tests for the symmetry axes calculation to ensure the notebook and .py file agree."""
 import numpy as np
 from scipy import ndimage
 from astropy.convolution import Gaussian2DKernel, convolve
