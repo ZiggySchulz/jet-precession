@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import numpy as np
+from numpy.typing import ArrayLike
 from scipy import ndimage
 from astropy.convolution import Gaussian2DKernel, convolve
-from typing import Sequence
 
 
 def _noise_map(
     shape: tuple[int, int], sensitivity: float, kernel: Gaussian2DKernel
 ) -> np.ndarray:
+    assert (
+        kernel.model is not None
+    ), "Gaussian2DKernel must have a model attribute to retrieve x_stddev and y_stddev"
     x_stddev = kernel.model.x_stddev.value
     y_stddev = kernel.model.y_stddev.value
     pixels_per_beam = np.pi * x_stddev * y_stddev * (2 * np.log(2))
@@ -22,7 +25,9 @@ def _rotate_image(image: np.ndarray, angle: float) -> np.ndarray:
     )
 
 
-def _symmetry_index_squared(image: np.ndarray, detectable: np.ndarray, power: int) -> float:
+def _symmetry_index_squared(
+    image: np.ndarray, detectable: np.ndarray, power: int
+) -> float:
     """Compute squared symmetry index of order 'power' for the image.
     Parameters as below
     """
@@ -37,6 +42,7 @@ def _symmetry_index_squared(image: np.ndarray, detectable: np.ndarray, power: in
     )
     total = left + right
     return float(np.sum((left - right) ** 2 * total) / np.sum(total))
+
 
 def symmetry_index(image: np.ndarray, detectable: np.ndarray, power: int) -> float:
     """Compute symmetry index of order 'power' for the image.
@@ -57,8 +63,9 @@ def symmetry_index(image: np.ndarray, detectable: np.ndarray, power: int) -> flo
     """
     return np.sqrt(_symmetry_index_squared(image, detectable, power=power))
 
+
 def calculate_symmetry_axes(
-    angles: Sequence[float],
+    angles: ArrayLike,
     surface_brightness: np.ndarray,
     sensitivity: float,
     gauss_kernel: Gaussian2DKernel,
@@ -101,11 +108,13 @@ def calculate_symmetry_axes(
             detectable[image_mc >= sensitivity] = 1
 
             for k, power in enumerate(powers):
-                results[k, i, j] = _symmetry_index_squared(image_mc, detectable, power=power)
+                results[k, i, j] = _symmetry_index_squared(
+                    image_mc, detectable, power=power
+                )
 
     idx = np.argmin(results, axis=2)
-    angles_best = [np.mean(angles[idx_k]) for idx_k in idx]
-    deviations = [np.std(angles[idx_k]) for idx_k in idx]
+    angles_best = [float(np.mean(angles[idx_k])) for idx_k in idx]
+    deviations = [float(np.std(angles[idx_k])) for idx_k in idx]
 
     return (
         (angles_best[0], deviations[0]),
