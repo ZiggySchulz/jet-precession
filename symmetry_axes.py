@@ -9,8 +9,8 @@ from typing import Sequence
 def _noise_map(
     shape: tuple[int, int], sensitivity: float, kernel: Gaussian2DKernel
 ) -> np.ndarray:
-    x_stddev = kernel.x_stddev.value
-    y_stddev = kernel.y_stddev.value
+    x_stddev = kernel.model.x_stddev.value
+    y_stddev = kernel.model.y_stddev.value
     pixels_per_beam = np.pi * x_stddev * y_stddev * (2 * np.log(2))
     sigma = sensitivity / np.sqrt(10.0) * np.sqrt(pixels_per_beam)
     return convolve(np.random.normal(loc=0.0, scale=sigma, size=shape), kernel)
